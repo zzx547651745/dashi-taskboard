@@ -1,0 +1,33 @@
+name: Package Windows fix
+
+on:
+  push:
+    branches:
+      - codex/package-windows-fix
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: windows-2025
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@2eae45db285e407f22119950686d47e1101e071b # 1.88.0
+        with:
+          targets: x86_64-pc-windows-msvc
+      - run: npm ci
+      - run: node --test test/windows-codex.test.mjs test/injector.test.mjs test/launcher-release.test.mjs
+      - run: npm run app:build:windows
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: codex-taskboard-windows-fix
+          path: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe
+          if-no-files-found: error
